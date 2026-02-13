@@ -1,0 +1,2474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>LoanMaster Pro - Gestión de Préstamos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            background: var(--light);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .header-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 11px;
+            opacity: 0.9;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto;
+            scrollbar-width: none;
+            position: sticky;
+            top: 85px;
+            z-index: 99;
+        }
+        
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            min-width: 70px;
+        }
+        
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Content */
+        .content {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+        
+        .card:active {
+            transform: scale(0.98);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-primary { background: #e0e7ff; color: #3730a3; }
+        .badge-gray { background: #f1f5f9; color: #64748b; }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--dark);
+            border: 2px solid #e2e8f0;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 13px;
+            margin: 0;
+            width: auto;
+        }
+        
+        .btn:active {
+            transform: scale(0.96);
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+        
+        .fab:active {
+            transform: scale(0.9) rotate(90deg);
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Lists */
+        .list-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .list-item:active {
+            transform: scale(0.98);
+        }
+        
+        .list-item-info h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .list-item-info p {
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        .list-item-amount {
+            text-align: right;
+        }
+        
+        .amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .amount-small {
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: flex-end;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 430px;
+            border-radius: 24px 24px 0 0;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--light);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            font-weight: 600;
+            color: var(--gray);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #34d399);
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        /* Search */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        
+        /* Detail View */
+        .detail-section {
+            margin-bottom: 25px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: var(--gray);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        /* Payment Button */
+        .pay-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pay-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .pay-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+        }
+        
+        /* Late fee indicator */
+        .late-fee {
+            color: var(--danger);
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        /* Config section */
+        .config-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .logo-preview {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+        
+        .logo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Report buttons grid */
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Toggle switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .toggle {
+            width: 50px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle.active {
+            background: var(--success);
+        }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>💰 LoanMaster Pro</h1>
+            <div style="font-size: 14px; opacity: 0.9;">Sistema de Gestión de Préstamos</div>
+            <div class="header-stats">
+                <div class="stat-item">📊 <span id="totalLoans">0</span> Prést.</div>
+                <div class="stat-item">👥 <span id="totalClients">0</span> Clts.</div>
+                <div class="stat-item">💵 $<span id="totalAmount">0</span></div>
+                <div class="stat-item">⚠️ <span id="lateFees">$0</span> Mora</div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="showSection('dashboard')">📊 Resumen</div>
+            <div class="nav-tab" onclick="showSection('clients')">👥 Clientes</div>
+            <div class="nav-tab" onclick="showSection('loans')">💳 Préstamos</div>
+            <div class="nav-tab" onclick="showSection('payments')">💸 Pagos</div>
+            <div class="nav-tab" onclick="showSection('reports')">📄 Docs</div>
+            <div class="nav-tab" onclick="showSection('config')">⚙️ Config</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeLoans">0</div>
+                        <div class="stat-label">Préstamos Activos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pendingAmount">$0</div>
+                        <div class="stat-label">Por Cobrar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="collectedAmount">$0</div>
+                        <div class="stat-label">Recaudado</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="overdueLoans">0</div>
+                        <div class="stat-label">En Mora</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📈 Préstamos Recientes</div>
+                    </div>
+                    <div id="recentLoansList">
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>No hay préstamos registrados</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #fca5a5;">
+                    <div class="card-header">
+                        <div class="card-title" style="color: #991b1b;">⚠️ Alertas de Mora</div>
+                    </div>
+                    <div id="lateAlerts">
+                        <p style="color: #7f1d1d; font-size: 14px;">No hay cuotas vencidas</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Clients Section -->
+            <div id="clients" class="section">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="clientSearch" placeholder="Buscar cliente..." oninput="searchClients()">
+                </div>
+                <div id="clientsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">👤</div>
+                        <p>No hay clientes registrados</p>
+                        <button class="btn btn-primary" onclick="openModal('clientModal')" style="margin-top: 20px;">
+                            + Agregar Cliente
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loans Section -->
+            <div id="loans" class="section">
+                <div id="loansList">
+                    <div class="empty-state">
+                        <div class="empty-icon">💳</div>
+                        <p>No hay préstamos registrados</p>
+                        <button class="btn btn-primary" onclick="openModal('loanModal')" style="margin-top: 20px;">
+                            + Nuevo Préstamo
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payments Section -->
+            <div id="payments" class="section">
+                <div id="paymentsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">💸</div>
+                        <p>No hay pagos registrados</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Section -->
+            <div id="reports" class="section">
+                <div class="config-section">
+                    <div class="card-title" style="margin-bottom: 15px;">📊 Reportes</div>
+                    <button class="btn btn-info" onclick="generateGeneralReport()">
+                        📈 Reporte General
+                    </button>
+                    <button class="btn btn-primary" onclick="generatePortfolioReport()">
+                        💼 Reporte de Cartera
+                    </button>
+                    <button class="btn btn-warning" onclick="generateLateReport()">
+                        ⚠️ Reporte de Morosidad
+                    </button>
+                </div>
+                
+                <div class="config-section">
+                    <div class="card-title" style="margin-bottom: 15px;">🎫 Facturas</div>
+                    <div class="form-group">
+                        <label class="form-label">Seleccionar Préstamo</label>
+                        <select class="form-select" id="invoiceLoanSelect">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="report-grid">
+                        <button class="btn btn-success" onclick="generateInvoice('last')">
+                            Última Cuota
+                        </button>
+                        <button class="btn btn-primary" onclick="generateInvoice('all')">
+                            Historial
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="card-title" style="margin-bottom: 15px;">📜 Contratos</div>
+                    <div class="form-group">
+                        <label class="form-label">Seleccionar Préstamo</label>
+                        <select class="form-select" id="contractLoanSelect">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="generateContract()">
+                        📄 Generar Contrato
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Config Section -->
+            <div id="config" class="section">
+                <div class="config-section">
+                    <div class="card-title" style="margin-bottom: 15px;">🏢 Configuración de Empresa</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la Empresa</label>
+                        <input type="text" class="form-input" id="companyName" placeholder="Ej: Préstamos ABC">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" class="form-input" id="companyAddress" placeholder="Ej: Av. Principal #123">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" class="form-input" id="companyPhone" placeholder="Ej: 555-1234">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="companyEmail" placeholder="Ej: info@empresa.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Logo (para PDFs)</label>
+                        <input type="file" class="form-input" id="companyLogo" accept="image/*" onchange="previewLogo()">
+                        <div class="logo-preview" id="logoPreview">
+                            <span style="color: var(--gray); font-size: 12px;">Sin logo</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="saveCompanyConfig()">
+                        💾 Guardar Configuración
+                    </button>
+                </div>
+                
+                <div class="config-section">
+                    <div class="card-title" style="margin-bottom: 15px;">⚙️ Configuración de Mora</div>
+                    
+                    <div class="toggle-container">
+                        <span class="toggle-label">Calcular mora automáticamente</span>
+                        <div class="toggle active" id="lateFeeToggle" onclick="toggleLateFee()"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Tasa de mora diaria (%)</label>
+                        <input type="number" class="form-input" id="lateFeeRate" value="1" step="0.1" min="0" max="10">
+                        <small style="color: var(--gray); font-size: 12px;">Porcentaje que se cobra por día de retraso</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Días de gracia</label>
+                        <input type="number" class="form-input" id="graceDays" value="3" min="0" max="30">
+                        <small style="color: var(--gray); font-size: 12px;">Días después del vencimiento antes de calcular mora</small>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="saveLateFeeConfig()">
+                        💾 Guardar Configuración de Mora
+                    </button>
+                </div>
+                
+                <div class="config-section">
+                    <div class="card-title" style="margin-bottom: 15px; color: var(--danger);">🗑️ Zona de Peligro</div>
+                    <button class="btn btn-danger" onclick="exportAllData()">
+                        📥 Exportar Todos los Datos (JSON)
+                    </button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
+                        📤 Importar Datos (JSON)
+                    </button>
+                    <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(this)">
+                    <button class="btn btn-danger" onclick="clearAllData()" style="margin-top: 20px;">
+                        ⚠️ Borrar Todos los Datos
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Floating Action Button -->
+        <button class="fab" onclick="showAddMenu()">+</button>
+    </div>
+    
+    <!-- Add Menu Modal -->
+    <div id="addMenuModal" class="modal" onclick="closeModal('addMenuModal')">
+        <div class="modal-content" style="border-radius: 24px; padding: 20px;" onclick="event.stopPropagation()">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 40px; height: 4px; background: #cbd5e1; border-radius: 2px; margin: 0 auto;"></div>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('clientModal'); closeModal('addMenuModal')">
+                👤 Nuevo Cliente
+            </button>
+            <button class="btn btn-success" onclick="openModal('loanModal'); closeModal('addMenuModal')">
+                💳 Nuevo Préstamo
+            </button>
+            <button class="btn btn-secondary" onclick="closeModal('addMenuModal')">
+                Cancelar
+            </button>
+        </div>
+    </div>
+    
+    <!-- Client Modal -->
+    <div id="clientModal" class="modal" onclick="closeModal('clientModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">👤 Nuevo Cliente</div>
+                <button class="modal-close" onclick="closeModal('clientModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm" onsubmit="saveClient(event)">
+                    <div class="form-group">
+                        <label class="form-label">Nombre Completo *</label>
+                        <input type="text" class="form-input" id="clientName" required placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Teléfono *</label>
+                        <input type="tel" class="form-input" id="clientPhone" required placeholder="Ej: 555-1234">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="clientEmail" placeholder="Ej: juan@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" class="form-input" id="clientAddress" placeholder="Ej: Calle Principal #123">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Documento de Identidad</label>
+                        <input type="text" class="form-input" id="clientId" placeholder="Ej: 12345678-9">
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Guardar Cliente</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loan Modal -->
+    <div id="loanModal" class="modal" onclick="closeModal('loanModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">💳 Nuevo Préstamo</div>
+                <button class="modal-close" onclick="closeModal('loanModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="loanForm" onsubmit="saveLoan(event)">
+                    <div class="form-group">
+                        <label class="form-label">Cliente *</label>
+                        <select class="form-select" id="loanClient" required>
+                            <option value="">Seleccionar cliente...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Monto del Préstamo *</label>
+                        <input type="number" class="form-input" id="loanAmount" required min="1" step="0.01" placeholder="Ej: 1000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tasa de Interés Anual (%) *</label>
+                        <input type="number" class="form-input" id="loanRate" required min="0" step="0.01" placeholder="Ej: 12">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Plazo (meses) *</label>
+                        <input type="number" class="form-input" id="loanTerm" required min="1" max="360" placeholder="Ej: 12">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipo de Cuota *</label>
+                        <select class="form-select" id="loanType" required>
+                            <option value="monthly">Mensual</option>
+                            <option value="biweekly">Quincenal</option>
+                            <option value="weekly">Semanal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Inicio *</label>
+                        <input type="date" class="form-input" id="loanDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descripción (opcional)</label>
+                        <input type="text" class="form-input" id="loanDesc" placeholder="Ej: Préstamo para negocio">
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Crear Préstamo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal" onclick="closeModal('paymentModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">💸 Registrar Pago</div>
+                <button class="modal-close" onclick="closeModal('paymentModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm" onsubmit="savePayment(event)">
+                    <input type="hidden" id="paymentLoanId">
+                    <input type="hidden" id="paymentInstallmentId">
+                    <div class="form-group">
+                        <label class="form-label">Préstamo</label>
+                        <div id="paymentLoanInfo" style="padding: 15px; background: var(--light); border-radius: 8px; font-weight: 600;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cuota #</label>
+                        <div id="paymentInstallmentInfo" style="padding: 15px; background: var(--light); border-radius: 8px; font-weight: 600;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Monto Original</label>
+                        <input type="number" class="form-input" id="paymentOriginalAmount" readonly style="background: #f1f5f9;">
+                    </div>
+                    <div class="form-group" id="lateFeeGroup" style="display: none;">
+                        <label class="form-label">Mora calculada</label>
+                        <input type="number" class="form-input" id="paymentLateFee" readonly style="background: #fee2e2; color: #991b1b; font-weight: 700;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Total a Pagar</label>
+                        <input type="number" class="form-input" id="paymentAmount" required step="0.01" style="font-weight: 700; font-size: 18px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Pago *</label>
+                        <input type="date" class="form-input" id="paymentDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Método de Pago *</label>
+                        <select class="form-select" id="paymentMethod" required>
+                            <option value="cash">Efectivo</option>
+                            <option value="transfer">Transferencia</option>
+                            <option value="check">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notas (opcional)</label>
+                        <input type="text" class="form-input" id="paymentNotes" placeholder="Ej: Pago adelantado">
+                    </div>
+                    <button type="submit" class="btn btn-success">💾 Confirmar Pago</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loan Detail Modal -->
+    <div id="loanDetailModal" class="modal" onclick="closeModal('loanDetailModal')">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-height: 95vh;">
+            <div class="modal-header">
+                <div class="modal-title">📋 Detalle del Préstamo</div>
+                <button class="modal-close" onclick="closeModal('loanDetailModal')">×</button>
+            </div>
+            <div class="modal-body" id="loanDetailContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let clients = JSON.parse(localStorage.getItem('loanClients')) || [];
+        let loans = JSON.parse(localStorage.getItem('loanLoans')) || [];
+        let payments = JSON.parse(localStorage.getItem('loanPayments')) || [];
+        let companyConfig = JSON.parse(localStorage.getItem('loanCompanyConfig')) || {};
+        let lateFeeConfig = JSON.parse(localStorage.getItem('loanLateFeeConfig')) || {
+            enabled: true,
+            rate: 1,
+            graceDays: 3
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCompanyConfig();
+            loadLateFeeConfig();
+            updateDashboard();
+            renderClients();
+            renderLoans();
+            renderPayments();
+            updateClientSelect();
+            updateReportSelects();
+            checkLateFees();
+            
+            // Set today's date as default
+            document.getElementById('loanDate').valueAsDate = new Date();
+            document.getElementById('paymentDate').valueAsDate = new Date();
+            
+            // Check for late fees every hour
+            setInterval(checkLateFees, 3600000);
+        });
+        
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (sectionId === 'reports') {
+                updateReportSelects();
+            }
+        }
+        
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        function showAddMenu() {
+            openModal('addMenuModal');
+        }
+        
+        // Late Fee Functions
+        function toggleLateFee() {
+            const toggle = document.getElementById('lateFeeToggle');
+            toggle.classList.toggle('active');
+        }
+        
+        function saveLateFeeConfig() {
+            lateFeeConfig = {
+                enabled: document.getElementById('lateFeeToggle').classList.contains('active'),
+                rate: parseFloat(document.getElementById('lateFeeRate').value) || 1,
+                graceDays: parseInt(document.getElementById('graceDays').value) || 3
+            };
+            localStorage.setItem('loanLateFeeConfig', JSON.stringify(lateFeeConfig));
+            showNotification('Configuración de mora guardada', 'success');
+            checkLateFees();
+            updateDashboard();
+        }
+        
+        function loadLateFeeConfig() {
+            if (lateFeeConfig.enabled) {
+                document.getElementById('lateFeeToggle').classList.add('active');
+            } else {
+                document.getElementById('lateFeeToggle').classList.remove('active');
+            }
+            document.getElementById('lateFeeRate').value = lateFeeConfig.rate;
+            document.getElementById('graceDays').value = lateFeeConfig.graceDays;
+        }
+        
+        function calculateLateFee(installment) {
+            if (!lateFeeConfig.enabled || installment.status === 'paid') return 0;
+            
+            const dueDate = new Date(installment.dueDate);
+            const today = new Date();
+            const graceDate = new Date(dueDate);
+            graceDate.setDate(graceDate.getDate() + lateFeeConfig.graceDays);
+            
+            if (today <= graceDate) return 0;
+            
+            const daysLate = Math.floor((today - graceDate) / (1000 * 60 * 60 * 24));
+            const dailyRate = lateFeeConfig.rate / 100;
+            const fee = installment.amount * dailyRate * daysLate;
+            
+            return Math.round(fee * 100) / 100;
+        }
+        
+        function checkLateFees() {
+            let totalLateFees = 0;
+            let alerts = [];
+            
+            loans.forEach(loan => {
+                if (loan.status !== 'active') return;
+                
+                loan.installments.forEach(inst => {
+                    if (inst.status === 'pending') {
+                        const fee = calculateLateFee(inst);
+                        inst.lateFee = fee;
+                        totalLateFees += fee;
+                        
+                        if (fee > 0) {
+                            const client = clients.find(c => c.id === loan.clientId);
+                            alerts.push({
+                                client: client ? client.name : 'Desconocido',
+                                amount: inst.amount,
+                                fee: fee,
+                                dueDate: inst.dueDate
+                            });
+                        }
+                    }
+                });
+            });
+            
+            localStorage.setItem('loanLoans', JSON.stringify(loans));
+            document.getElementById('lateFees').textContent = '$' + totalLateFees.toLocaleString();
+            
+            // Update alerts section
+            const alertsContainer = document.getElementById('lateAlerts');
+            if (alerts.length === 0) {
+                alertsContainer.innerHTML = '<p style="color: #7f1d1d; font-size: 14px;">No hay cuotas vencidas con mora</p>';
+            } else {
+                alertsContainer.innerHTML = alerts.map(a => `
+                    <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dc2626;">
+                        <div style="font-weight: 600; color: #991b1b;">${a.client}</div>
+                        <div style="font-size: 13px; color: #7f1d1d;">
+                            Venció: ${formatDate(a.dueDate)} | 
+                            Cuota: $${a.amount.toFixed(2)} | 
+                            Mora: <strong>$${a.fee.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            return totalLateFees;
+        }
+        
+        // Client Functions
+        function saveClient(e) {
+            e.preventDefault();
+            
+            const client = {
+                id: Date.now(),
+                name: document.getElementById('clientName').value,
+                phone: document.getElementById('clientPhone').value,
+                email: document.getElementById('clientEmail').value,
+                address: document.getElementById('clientAddress').value,
+                idNumber: document.getElementById('clientId').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            clients.push(client);
+            localStorage.setItem('loanClients', JSON.stringify(clients));
+            
+            document.getElementById('clientForm').reset();
+            closeModal('clientModal');
+            renderClients();
+            updateClientSelect();
+            updateDashboard();
+            
+            showNotification('Cliente guardado exitosamente', 'success');
+        }
+        
+        function renderClients() {
+            const container = document.getElementById('clientsList');
+            
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">👤</div>
+                        <p>No hay clientes registrados</p>
+                        <button class="btn btn-primary" onclick="openModal('clientModal')" style="margin-top: 20px;">
+                            + Agregar Cliente
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = clients.map(client => `
+                <div class="list-item" onclick="viewClient(${client.id})">
+                    <div class="list-item-info">
+                        <h3>${client.name}</h3>
+                        <p>📱 ${client.phone} ${client.email ? '| 📧 ' + client.email : ''}</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); editClient(${client.id})">
+                            ✏️
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteClient(${client.id})">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function searchClients() {
+            const search = document.getElementById('clientSearch').value.toLowerCase();
+            const items = document.querySelectorAll('#clientsList .list-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(search) ? 'flex' : 'none';
+            });
+        }
+        
+        function deleteClient(id) {
+            if (!confirm('¿Eliminar este cliente? Se eliminarán también sus préstamos.')) return;
+            
+            clients = clients.filter(c => c.id !== id);
+            loans = loans.filter(l => l.clientId !== id);
+            
+            localStorage.setItem('loanClients', JSON.stringify(clients));
+            localStorage.setItem('loanLoans', JSON.stringify(loans));
+            
+            renderClients();
+            renderLoans();
+            updateDashboard();
+            showNotification('Cliente eliminado', 'danger');
+        }
+        
+        function updateClientSelect() {
+            const select = document.getElementById('loanClient');
+            select.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+                clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+        
+        // Loan Functions
+        function saveLoan(e) {
+            e.preventDefault();
+            
+            const clientId = parseInt(document.getElementById('loanClient').value);
+            const amount = parseFloat(document.getElementById('loanAmount').value);
+            const rate = parseFloat(document.getElementById('loanRate').value);
+            const term = parseInt(document.getElementById('loanTerm').value);
+            const type = document.getElementById('loanType').value;
+            const date = document.getElementById('loanDate').value;
+            const desc = document.getElementById('loanDesc').value;
+            
+            // Calculate installments
+            const installments = calculateInstallments(amount, rate, term, type, date);
+            
+            const loan = {
+                id: Date.now(),
+                clientId: clientId,
+                amount: amount,
+                rate: rate,
+                term: term,
+                type: type,
+                startDate: date,
+                description: desc,
+                installments: installments,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            
+            loans.push(loan);
+            localStorage.setItem('loanLoans', JSON.stringify(loans));
+            
+            document.getElementById('loanForm').reset();
+            document.getElementById('loanDate').valueAsDate = new Date();
+            closeModal('loanModal');
+            renderLoans();
+            updateDashboard();
+            
+            showNotification('Préstamo creado exitosamente', 'success');
+        }
+        
+        function calculateInstallments(amount, rate, term, type, startDate) {
+            const installments = [];
+            const monthlyRate = rate / 100 / 12;
+            let paymentAmount;
+            
+            // Adjust rate based on payment type
+            let periods = term;
+            let periodRate = monthlyRate;
+            let daysBetween = 30;
+            
+            if (type === 'biweekly') {
+                periods = term * 2;
+                periodRate = monthlyRate / 2;
+                daysBetween = 15;
+            } else if (type === 'weekly') {
+                periods = term * 4;
+                periodRate = monthlyRate / 4;
+                daysBetween = 7;
+            }
+            
+            // Calculate payment using French system
+            if (rate === 0) {
+                paymentAmount = amount / periods;
+            } else {
+                paymentAmount = amount * (periodRate * Math.pow(1 + periodRate, periods)) / 
+                               (Math.pow(1 + periodRate, periods) - 1);
+            }
+            
+            let balance = amount;
+            let currentDate = new Date(startDate);
+            
+            for (let i = 1; i <= periods; i++) {
+                const interest = balance * periodRate;
+                const principal = paymentAmount - interest;
+                balance -= principal;
+                
+                if (balance < 0) balance = 0;
+                
+                installments.push({
+                    id: i,
+                    dueDate: new Date(currentDate).toISOString().split('T')[0],
+                    amount: Math.round(paymentAmount * 100) / 100,
+                    principal: Math.round(principal * 100) / 100,
+                    interest: Math.round(interest * 100) / 100,
+                    balance: Math.round(balance * 100) / 100,
+                    status: 'pending',
+                    paidAmount: 0,
+                    paidDate: null,
+                    lateFee: 0
+                });
+                
+                currentDate.setDate(currentDate.getDate() + daysBetween);
+            }
+            
+            return installments;
+        }
+        
+        function renderLoans() {
+            const container = document.getElementById('loansList');
+            
+            if (loans.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💳</div>
+                        <p>No hay préstamos registrados</p>
+                        <button class="btn btn-primary" onclick="openModal('loanModal')" style="margin-top: 20px;">
+                            + Nuevo Préstamo
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = loans.map(loan => {
+                const client = clients.find(c => c.id === loan.clientId);
+                const paidCount = loan.installments.filter(i => i.status === 'paid').length;
+                const totalCount = loan.installments.length;
+                const progress = (paidCount / totalCount) * 100;
+                const nextDue = loan.installments.find(i => i.status === 'pending');
+                const totalLateFee = loan.installments.reduce((sum, i) => sum + (i.lateFee || 0), 0);
+                
+                return `
+                    <div class="card" onclick="viewLoanDetail(${loan.id})">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">${client ? client.name : 'Cliente eliminado'}</div>
+                                <div style="font-size: 12px; color: var(--gray); margin-top: 4px;">
+                                    ${loan.description || 'Sin descripción'}
+                                </div>
+                            </div>
+                            <span class="badge ${loan.status === 'active' ? 'badge-success' : 'badge-primary'}">
+                                ${loan.status === 'active' ? 'Activo' : 'Completado'}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <div>
+                                <div style="font-size: 12px; color: var(--gray);">Monto</div>
+                                <div style="font-size: 20px; font-weight: 700;">$${loan.amount.toLocaleString()}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 12px; color: var(--gray);">Próximo vencimiento</div>
+                                <div style="font-size: 14px; font-weight: 600; ${nextDue && new Date(nextDue.dueDate) < new Date() ? 'color: var(--danger);' : ''}">
+                                    ${nextDue ? formatDate(nextDue.dueDate) : 'Completado'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${totalLateFee > 0 ? `
+                            <div style="background: #fee2e2; color: #991b1b; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; font-weight: 600;">
+                                ⚠️ Mora acumulada: $${totalLateFee.toFixed(2)}
+                            </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 13px; color: var(--gray);">Progreso: ${paidCount}/${totalCount} cuotas</span>
+                            <span style="font-size: 13px; font-weight: 600;">${progress.toFixed(0)}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%"></div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="event.stopPropagation(); viewLoanDetail(${loan.id})">
+                                📋 Ver Detalle
+                            </button>
+                            ${nextDue ? `
+                                <button class="btn btn-success btn-sm" style="flex: 1;" onclick="event.stopPropagation(); openPaymentModal(${loan.id}, ${nextDue.id})">
+                                    💸 Pagar
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Update recent loans in dashboard
+            const recentLoans = loans.slice(-3).reverse();
+            const recentContainer = document.getElementById('recentLoansList');
+            
+            if (recentLoans.length > 0) {
+                recentContainer.innerHTML = recentLoans.map(loan => {
+                    const client = clients.find(c => c.id === loan.clientId);
+                    return `
+                        <div class="list-item" onclick="viewLoanDetail(${loan.id})" style="margin-bottom: 10px;">
+                            <div class="list-item-info">
+                                <h3>${client ? client.name : 'Cliente eliminado'}</h3>
+                                <p>${formatDate(loan.startDate)} • ${loan.term} meses</p>
+                            </div>
+                            <div class="list-item-amount">
+                                <div class="amount">$${loan.amount.toLocaleString()}</div>
+                                <div class="amount-small">${loan.rate}% anual</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function viewLoanDetail(loanId) {
+            const loan = loans.find(l => l.id === loanId);
+            if (!loan) return;
+            
+            const client = clients.find(c => c.id === loan.clientId);
+            const totalPaid = loan.installments.reduce((sum, i) => sum + i.paidAmount, 0);
+            const totalDue = loan.installments.reduce((sum, i) => sum + i.amount, 0);
+            const totalLateFees = loan.installments.reduce((sum, i) => sum + (i.lateFee || 0), 0);
+            const remaining = totalDue - totalPaid + totalLateFees;
+            
+            let html = `
+                <div class="detail-section">
+                    <div class="detail-label">Cliente</div>
+                    <div class="detail-value">${client ? client.name : 'N/A'}</div>
+                </div>
+                
+                <div class="detail-grid">
+                    <div class="detail-section">
+                        <div class="detail-label">Monto Prestado</div>
+                        <div class="detail-value">$${loan.amount.toLocaleString()}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Tasa de Interés</div>
+                        <div class="detail-value">${loan.rate}% anual</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Total a Pagar</div>
+                        <div class="detail-value">$${totalDue.toLocaleString()}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Saldo Pendiente</div>
+                        <div class="detail-value" style="color: var(--danger);">$${remaining.toLocaleString()}</div>
+                    </div>
+                </div>
+                
+                ${totalLateFees > 0 ? `
+                    <div class="detail-section" style="background: #fee2e2; padding: 15px; border-radius: 12px;">
+                        <div class="detail-label" style="color: #991b1b;">Mora Total Acumulada</div>
+                        <div class="detail-value" style="color: #991b1b; font-size: 24px;">$${totalLateFees.toFixed(2)}</div>
+                    </div>
+                ` : ''}
+                
+                <div class="detail-section">
+                    <div class="detail-label">Tabla de Amortización</div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vencimiento</th>
+                                    <th>Cuota</th>
+                                    <th>Mora</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            loan.installments.forEach(inst => {
+                const isOverdue = inst.status === 'pending' && new Date(inst.dueDate) < new Date();
+                const lateFee = inst.lateFee || 0;
+                html += `
+                    <tr>
+                        <td>${inst.id}</td>
+                        <td>${formatDate(inst.dueDate)}</td>
+                        <td>$${inst.amount.toFixed(2)}</td>
+                        <td style="color: ${lateFee > 0 ? 'var(--danger)' : 'inherit'}; font-weight: ${lateFee > 0 ? '600' : 'normal'};">
+                            ${lateFee > 0 ? '$' + lateFee.toFixed(2) : '-'}
+                        </td>
+                        <td>
+                            <span class="badge ${inst.status === 'paid' ? 'badge-success' : isOverdue ? 'badge-danger' : 'badge-warning'}">
+                                ${inst.status === 'paid' ? 'Pagada' : isOverdue ? 'Vencida' : 'Pendiente'}
+                            </span>
+                        </td>
+                        <td>
+                            ${inst.status === 'pending' ? `
+                                <button class="pay-btn" onclick="openPaymentModal(${loan.id}, ${inst.id}); closeModal('loanDetailModal')">
+                                    Pagar
+                                </button>
+                            ` : '<span style="font-size: 12px; color: var(--success);">✓</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-info btn-sm" style="flex: 1;" onclick="generateLoanContract(${loan.id})">
+                        📄 Contrato
+                    </button>
+                    <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="generateLoanInvoice(${loan.id})">
+                        🎫 Factura
+                    </button>
+                    <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="deleteLoan(${loan.id})">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('loanDetailContent').innerHTML = html;
+            openModal('loanDetailModal');
+        }
+        
+        function deleteLoan(id) {
+            if (!confirm('¿Eliminar este préstamo permanentemente?')) return;
+            
+            loans = loans.filter(l => l.id !== id);
+            localStorage.setItem('loanLoans', JSON.stringify(loans));
+            
+            closeModal('loanDetailModal');
+            renderLoans();
+            updateDashboard();
+            showNotification('Préstamo eliminado', 'danger');
+        }
+        
+        // Payment Functions
+        function openPaymentModal(loanId, installmentId) {
+            const loan = loans.find(l => l.id === loanId);
+            const installment = loan.installments.find(i => i.id === installmentId);
+            const client = clients.find(c => c.id === loan.clientId);
+            
+            const lateFee = calculateLateFee(installment);
+            
+            document.getElementById('paymentLoanId').value = loanId;
+            document.getElementById('paymentInstallmentId').value = installmentId;
+            document.getElementById('paymentLoanInfo').textContent = client ? client.name : 'Cliente desconocido';
+            document.getElementById('paymentInstallmentInfo').textContent = `Cuota #${installmentId} - Vence: ${formatDate(installment.dueDate)}`;
+            document.getElementById('paymentOriginalAmount').value = installment.amount.toFixed(2);
+            
+            if (lateFee > 0) {
+                document.getElementById('lateFeeGroup').style.display = 'block';
+                document.getElementById('paymentLateFee').value = lateFee.toFixed(2);
+                document.getElementById('paymentAmount').value = (installment.amount + lateFee).toFixed(2);
+            } else {
+                document.getElementById('lateFeeGroup').style.display = 'none';
+                document.getElementById('paymentAmount').value = installment.amount.toFixed(2);
+            }
+            
+            openModal('paymentModal');
+        }
+        
+        function savePayment(e) {
+            e.preventDefault();
+            
+            const loanId = parseInt(document.getElementById('paymentLoanId').value);
+            const installmentId = parseInt(document.getElementById('paymentInstallmentId').value);
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const date = document.getElementById('paymentDate').value;
+            const method = document.getElementById('paymentMethod').value;
+            const notes = document.getElementById('paymentNotes').value;
+            
+            const loan = loans.find(l => l.id === loanId);
+            const installment = loan.installments.find(i => i.id === installmentId);
+            
+            // Update installment
+            installment.status = 'paid';
+            installment.paidAmount = amount;
+            installment.paidDate = date;
+            installment.lateFeePaid = installment.lateFee || 0;
+            
+            // Check if loan is completed
+            const allPaid = loan.installments.every(i => i.status === 'paid');
+            if (allPaid) {
+                loan.status = 'completed';
+            }
+            
+            // Save payment record
+            const payment = {
+                id: Date.now(),
+                loanId: loanId,
+                installmentId: installmentId,
+                amount: amount,
+                originalAmount: installment.amount,
+                lateFee: installment.lateFee || 0,
+                date: date,
+                method: method,
+                notes: notes,
+                clientId: loan.clientId
+            };
+            
+            payments.push(payment);
+            
+            localStorage.setItem('loanLoans', JSON.stringify(loans));
+            localStorage.setItem('loanPayments', JSON.stringify(payments));
+            
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentDate').valueAsDate = new Date();
+            closeModal('paymentModal');
+            
+            renderLoans();
+            renderPayments();
+            updateDashboard();
+            checkLateFees();
+            
+            showNotification('Pago registrado exitosamente', 'success');
+            
+            // Offer to generate receipt
+            if (confirm('¿Desea generar un recibo/factura de este pago?')) {
+                generatePaymentReceipt(payment);
+            }
+        }
+        
+        function renderPayments() {
+            const container = document.getElementById('paymentsList');
+            
+            if (payments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💸</div>
+                        <p>No hay pagos registrados</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const sortedPayments = payments.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = sortedPayments.map(payment => {
+                const loan = loans.find(l => l.id === payment.loanId);
+                const client = clients.find(c => c.id === payment.clientId);
+                
+                return `
+                    <div class="list-item" onclick="generatePaymentReceiptById(${payment.id})">
+                        <div class="list-item-info">
+                            <h3>${client ? client.name : 'Cliente eliminado'}</h3>
+                            <p>${formatDate(payment.date)} • Cuota #${payment.installmentId} • ${getMethodText(payment.method)}</p>
+                            ${payment.notes ? `<p style="font-size: 11px; color: var(--gray); margin-top: 2px;">📝 ${payment.notes}</p>` : ''}
+                        </div>
+                        <div class="list-item-amount">
+                            <div class="amount" style="color: var(--success);">+$${payment.amount.toFixed(2)}</div>
+                            ${payment.lateFee > 0 ? `<div class="amount-small" style="color: var(--danger);">Mora: $${payment.lateFee.toFixed(2)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Dashboard Functions
+        function updateDashboard() {
+            const activeLoans = loans.filter(l => l.status === 'active').length;
+            const totalAmount = loans.reduce((sum, l) => sum + l.amount, 0);
+            
+            let pendingAmount = 0;
+            let collectedAmount = 0;
+            let overdueCount = 0;
+            
+            loans.forEach(loan => {
+                loan.installments.forEach(inst => {
+                    if (inst.status === 'paid') {
+                        collectedAmount += inst.paidAmount;
+                    } else {
+                        pendingAmount += inst.amount;
+                        if (new Date(inst.dueDate) < new Date()) {
+                            overdueCount++;
+                        }
+                    }
+                });
+            });
+            
+            document.getElementById('totalLoans').textContent = loans.length;
+            document.getElementById('totalClients').textContent = clients.length;
+            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
+            
+            document.getElementById('activeLoans').textContent = activeLoans;
+            document.getElementById('pendingAmount').textContent = '$' + pendingAmount.toLocaleString();
+            document.getElementById('collectedAmount').textContent = '$' + collectedAmount.toLocaleString();
+            document.getElementById('overdueLoans').textContent = overdueCount;
+        }
+        
+        // PDF Generation Functions
+        function loadCompanyConfig() {
+            if (companyConfig.name) document.getElementById('companyName').value = companyConfig.name;
+            if (companyConfig.address) document.getElementById('companyAddress').value = companyConfig.address;
+            if (companyConfig.phone) document.getElementById('companyPhone').value = companyConfig.phone;
+            if (companyConfig.email) document.getElementById('companyEmail').value = companyConfig.email;
+            if (companyConfig.logo) {
+                document.getElementById('logoPreview').innerHTML = `<img src="${companyConfig.logo}" alt="Logo">`;
+            }
+        }
+        
+        function saveCompanyConfig() {
+            companyConfig = {
+                name: document.getElementById('companyName').value,
+                address: document.getElementById('companyAddress').value,
+                phone: document.getElementById('companyPhone').value,
+                email: document.getElementById('companyEmail').value,
+                logo: companyConfig.logo || null
+            };
+            localStorage.setItem('loanCompanyConfig', JSON.stringify(companyConfig));
+            showNotification('Configuración guardada', 'success');
+        }
+        
+        function previewLogo() {
+            const file = document.getElementById('companyLogo').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    companyConfig.logo = e.target.result;
+                    document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}" alt="Logo">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        async function addLogoToPDF(doc) {
+            if (companyConfig.logo) {
+                try {
+                    const img = new Image();
+                    img.src = companyConfig.logo;
+                    await new Promise(resolve => {
+                        img.onload = resolve;
+                    });
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    // Calculate aspect ratio to fit in 30x30mm
+                    const maxWidth = 30;
+                    const maxHeight = 30;
+                    let width = maxWidth;
+                    let height = (img.height * maxWidth) / img.width;
+                    
+                    if (height > maxHeight) {
+                        height = maxHeight;
+                        width = (img.width * maxHeight) / img.height;
+                    }
+                    
+                    doc.addImage(imgData, 'PNG', 10, 10, width, height);
+                    return height;
+                } catch (e) {
+                    console.error('Error loading logo:', e);
+                    return 0;
+                }
+            }
+            return 0;
+        }
+        
+        async function generateGeneralReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const logoHeight = await addLogoToPDF(doc);
+            let yPos = Math.max(20, logoHeight + 10);
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setTextColor(99, 102, 241);
+            doc.text(companyConfig.name || 'LoanMaster Pro', 105, yPos, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            yPos += 10;
+            doc.text(companyConfig.address || '', 105, yPos, { align: 'center' });
+            yPos += 5;
+            doc.text(`Tel: ${companyConfig.phone || ''} | Email: ${companyConfig.email || ''}`, 105, yPos, { align: 'center' });
+            
+            yPos += 15;
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.text('REPORTE GENERAL DE CARTERA', 105, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, 105, yPos, { align: 'center' });
+            
+            // Summary stats
+            yPos += 15;
+            const stats = [
+                ['Total Clientes', clients.length.toString()],
+                ['Total Préstamos', loans.length.toString()],
+                ['Préstamos Activos', loans.filter(l => l.status === 'active').length.toString()],
+                ['Préstamos Completados', loans.filter(l => l.status === 'completed').length.toString()],
+                ['Total Prestado', '$' + loans.reduce((sum, l) => sum + l.amount, 0).toLocaleString()],
+                ['Total Recaudado', '$' + payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()],
+                ['Saldo Pendiente', '$' + calculatePendingBalance().toLocaleString()],
+                ['Total en Mora', '$' + checkLateFees().toLocaleString()]
+            ];
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [['Métrica', 'Valor']],
+                body: stats,
+                theme: 'grid',
+                headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+                styles: { fontSize: 11 }
+            });
+            
+            // Active loans table
+            const activeLoans = loans.filter(l => l.status === 'active');
+            if (activeLoans.length > 0) {
+                const loanData = activeLoans.map(loan => {
+                    const client = clients.find(c => c.id === loan.clientId);
+                    const paid = loan.installments.filter(i => i.status === 'paid').length;
+                    const total = loan.installments.length;
+                    const balance = loan.installments.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.amount, 0);
+                    const lateFee = loan.installments.reduce((sum, i) => sum + (i.lateFee || 0), 0);
+                    
+                    return [
+                        client ? client.name : 'N/A',
+                        `$${loan.amount.toLocaleString()}`,
+                        `${loan.rate}%`,
+                        `${paid}/${total}`,
+                        `$${balance.toLocaleString()}`,
+                        `$${lateFee.toFixed(2)}`
+                    ];
+                });
+                
+                doc.addPage();
+                doc.setFontSize(14);
+                doc.text('Préstamos Activos', 14, 20);
+                
+                doc.autoTable({
+                    startY: 25,
+                    head: [['Cliente', 'Monto', 'Tasa', 'Progreso', 'Saldo', 'Mora']],
+                    body: loanData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+                    styles: { fontSize: 10 }
+                });
+            }
+            
+            doc.save(`Reporte_General_${new Date().toISOString().split('T')[0]}.pdf`);
+            showNotification('Reporte generado exitosamente', 'success');
+        }
+        
+        function calculatePendingBalance() {
+            let pending = 0;
+            loans.forEach(loan => {
+                loan.installments.forEach(inst => {
+                    if (inst.status === 'pending') {
+                        pending += inst.amount;
+                    }
+                });
+            });
+            return pending;
+        }
+        
+        async function generatePortfolioReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l'); // Landscape
+            
+            const logoHeight = await addLogoToPDF(doc);
+            let yPos = Math.max(20, logoHeight + 10);
+            
+            doc.setFontSize(20);
+            doc.setTextColor(99, 102, 241);
+            doc.text(companyConfig.name || 'LoanMaster Pro', 148, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.text('REPORTE DETALLADO DE CARTERA', 148, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, 148, yPos, { align: 'center' });
+            
+            const allData = loans.map(loan => {
+                const client = clients.find(c => c.id === loan.clientId);
+                const totalPaid = loan.installments.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
+                const totalPending = loan.installments.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.amount, 0);
+                const lateFee = loan.installments.reduce((sum, i) => sum + (i.lateFee || 0), 0);
+                
+                return [
+                    loan.id.toString(),
+                    client ? client.name : 'N/A',
+                    formatDate(loan.startDate),
+                    `$${loan.amount.toLocaleString()}`,
+                    `${loan.rate}%`,
+                    loan.term + ' meses',
+                    loan.type === 'monthly' ? 'Mensual' : loan.type === 'biweekly' ? 'Quincenal' : 'Semanal',
+                    `$${totalPaid.toFixed(2)}`,
+                    `$${totalPending.toFixed(2)}`,
+                    `$${lateFee.toFixed(2)}`,
+                    loan.status === 'active' ? 'Activo' : 'Completado'
+                ];
+            });
+            
+            doc.autoTable({
+                startY: yPos + 10,
+                head: [['ID', 'Cliente', 'Fecha', 'Monto', 'Tasa', 'Plazo', 'Tipo', 'Pagado', 'Pendiente', 'Mora', 'Estado']],
+                body: allData,
+                theme: 'grid',
+                headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+                styles: { fontSize: 9 }
+            });
+            
+            doc.save(`Cartera_Detallada_${new Date().toISOString().split('T')[0]}.pdf`);
+            showNotification('Reporte de cartera generado', 'success');
+        }
+        
+        async function generateLateReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const logoHeight = await addLogoToPDF(doc);
+            let yPos = Math.max(20, logoHeight + 10);
+            
+            doc.setFontSize(20);
+            doc.setTextColor(239, 68, 68);
+            doc.text(companyConfig.name || 'LoanMaster Pro', 105, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.text('REPORTE DE MOROSIDAD', 105, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, 105, yPos, { align: 'center' });
+            
+            const lateData = [];
+            loans.forEach(loan => {
+                if (loan.status !== 'active') return;
+                const client = clients.find(c => c.id === loan.clientId);
+                
+                loan.installments.forEach(inst => {
+                    if (inst.status === 'pending' && inst.lateFee > 0) {
+                        const daysLate = Math.floor((new Date() - new Date(inst.dueDate)) / (1000 * 60 * 60 * 24));
+                        lateData.push([
+                            client ? client.name : 'N/A',
+                            client ? client.phone : 'N/A',
+                            `#${inst.id}`,
+                            formatDate(inst.dueDate),
+                            daysLate.toString(),
+                            `$${inst.amount.toFixed(2)}`,
+                            `$${inst.lateFee.toFixed(2)}`,
+                            `$${(inst.amount + inst.lateFee).toFixed(2)}`
+                        ]);
+                    }
+                });
+            });
+            
+            if (lateData.length === 0) {
+                yPos += 20;
+                doc.setFontSize(12);
+                doc.text('No hay cuotas en mora actualmente.', 105, yPos, { align: 'center' });
+            } else {
+                doc.autoTable({
+                    startY: yPos + 10,
+                    head: [['Cliente', 'Teléfono', 'Cuota', 'Vencimiento', 'Días', 'Monto', 'Mora', 'Total']],
+                    body: lateData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [239, 68, 68], textColor: 255 },
+                    styles: { fontSize: 10 }
+                });
+            }
+            
+            doc.save(`Reporte_Mora_${new Date().toISOString().split('T')[0]}.pdf`);
+            showNotification('Reporte de morosidad generado', 'success');
+        }
+        
+        function updateReportSelects() {
+            const invoiceSelect = document.getElementById('invoiceLoanSelect');
+            const contractSelect = document.getElementById('contractLoanSelect');
+            
+            const options = '<option value="">Seleccionar...</option>' +
+                loans.map(l => {
+                    const client = clients.find(c => c.id === l.clientId);
+                    return `<option value="${l.id}">${client ? client.name : 'N/A'} - $${l.amount}</option>`;
+                }).join('');
+            
+            invoiceSelect.innerHTML = options;
+            contractSelect.innerHTML = options;
+        }
+        
+        async function generateInvoice(type) {
+            const loanId = document.getElementById('invoiceLoanSelect').value;
+            if (!loanId) {
+                showNotification('Seleccione un préstamo', 'warning');
+                return;
+            }
+            
+            const loan = loans.find(l => l.id == loanId);
+            if (type === 'last') {
+                const lastPaid = loan.installments.filter(i => i.status === 'paid').pop();
+                if (lastPaid) {
+                    await generatePaymentReceipt({
+                        loanId: loan.id,
+                        installmentId: lastPaid.id,
+                        amount: lastPaid.paidAmount,
+                        lateFee: lastPaid.lateFeePaid || 0,
+                        date: lastPaid.paidDate,
+                        clientId: loan.clientId
+                    });
+                } else {
+                    showNotification('No hay pagos registrados', 'warning');
+                }
+            } else {
+                await generateLoanInvoice(loan.id);
+            }
+        }
+        
+        async function generateLoanInvoice(loanId) {
+            const loan = loans.find(l => l.id === loanId);
+            const client = clients.find(c => c.id === loan.clientId);
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const logoHeight = await addLogoToPDF(doc);
+            let yPos = Math.max(20, logoHeight + 10);
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setTextColor(99, 102, 241);
+            doc.text(companyConfig.name || 'LoanMaster Pro', 105, yPos, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            yPos += 10;
+            doc.text('HISTORIAL DE PAGOS', 105, yPos, { align: 'center' });
+            
+            // Client info
+            yPos += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0);
+            doc.text(`Cliente: ${client ? client.name : 'N/A'}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Teléfono: ${client ? client.phone : 'N/A'}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Préstamo #: ${loan.id}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Monto Original: $${loan.amount.toLocaleString()}`, 14, yPos);
+            
+            // Payments table
+            const paymentsData = loan.installments
+                .filter(i => i.status === 'paid')
+                .map(i => [
+                    i.id.toString(),
+                    formatDate(i.dueDate),
+                    formatDate(i.paidDate),
+                    `$${i.amount.toFixed(2)}`,
+                    `$${(i.lateFeePaid || 0).toFixed(2)}`,
+                    `$${i.paidAmount.toFixed(2)}`
+                ]);
+            
+            if (paymentsData.length === 0) {
+                yPos += 15;
+                doc.text('No hay pagos registrados aún.', 14, yPos);
+            } else {
+                doc.autoTable({
+                    startY: yPos + 5,
+                    head: [['Cuota', 'Vencimiento', 'Pago Realizado', 'Monto', 'Mora', 'Total Pagado']],
+                    body: paymentsData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [99, 102, 241], textColor: 255 }
+                });
+            }
+            
+            // Summary
+            const totalPaid = loan.installments.reduce((sum, i) => sum + i.paidAmount, 0);
+            const totalLate = loan.installments.reduce((sum, i) => sum + (i.lateFeePaid || 0), 0);
+            const pending = loan.installments.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.amount + (i.lateFee || 0), 0);
+            
+            const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : yPos + 20;
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('RESUMEN:', 14, finalY);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Total Pagado: $${totalPaid.toFixed(2)}`, 14, finalY + 7);
+            doc.text(`Total Mora Pagada: $${totalLate.toFixed(2)}`, 14, finalY + 14);
+            doc.text(`Saldo Pendiente: $${pending.toFixed(2)}`, 14, finalY + 21);
+            
+            doc.save(`Factura_${client ? client.name.replace(/\s+/g, '_') : 'Cliente'}_${loan.id}.pdf`);
+            showNotification('Factura generada', 'success');
+        }
+        
+        async function generateContract() {
+            const loanId = document.getElementById('contractLoanSelect').value;
+            if (!loanId) {
+                showNotification('Seleccione un préstamo', 'warning');
+                return;
+            }
+            await generateLoanContract(parseInt(loanId));
+        }
+        
+        async function generateLoanContract(loanId) {
+            const loan = loans.find(l => l.id === loanId);
+            const client = clients.find(c => c.id === loan.clientId);
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const logoHeight = await addLogoToPDF(doc);
+            let yPos = Math.max(20, logoHeight + 10);
+            
+            // Header
+            doc.setFontSize(18);
+            doc.setTextColor(99, 102, 241);
+            doc.text(companyConfig.name || 'LoanMaster Pro', 105, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.text('CONTRATO DE PRÉSTAMO', 105, yPos, { align: 'center' });
+            
+            // Contract content
+            yPos += 20;
+            doc.setFontSize(11);
+            
+            const contractText = `
+CONTRATO DE PRÉSTAMO ENTRE PARTES
+
+En la ciudad de _______________, a fecha ${formatDate(new Date().toISOString())}, comparecen:
+
+PRESTADOR: ${companyConfig.name || '_____________________'}, con domicilio en ${companyConfig.address || '_____________________'}, en adelante "EL PRESTADOR".
+
+CLIENTE: ${client ? client.name : '_____________________'}, identificado con documento número ${client ? client.idNumber || 'N/A' : '_____________________'}, con domicilio en ${client ? client.address || 'N/A' : '_____________________'}, en adelante "EL CLIENTE".
+
+CLAUSULAS:
+
+PRIMERA: OBJETO DEL CONTRATO
+EL PRESTADOR otorga en calidad de préstamo a EL CLIENTE la suma de $${loan.amount.toLocaleString()} (${numberToWords(loan.amount)}), que EL CLIENTE declara recibir en este acto a su entera satisfacción.
+
+SEGUNDA: PLAZO Y FORMA DE PAGO
+El plazo del préstamo es de ${loan.term} meses, con pagos ${loan.type === 'monthly' ? 'mensuales' : loan.type === 'biweekly' ? 'quincenales' : 'semanales'}.
+La tasa de interés es del ${loan.rate}% anual.
+El número total de cuotas es de ${loan.installments.length}.
+El monto de cada cuota es de $${loan.installments[0].amount.toFixed(2)}.
+
+TERCERA: MORA
+En caso de incumplimiento en el pago oportuno de las cuotas, se aplicará una tasa de mora del ${lateFeeConfig.rate}% diario sobre el valor de la cuota vencida, después de ${lateFeeConfig.graceDays} días de gracia.
+
+CUARTA: ACELERACIÓN
+El incumplimiento en el pago de dos (2) cuotas consecutivas dará derecho a EL PRESTADOR a exigir el pago total anticipado del saldo insoluto.
+
+QUINTA: GARANTÍA
+Este préstamo se otorga sin garantía real, únicamente con la firma de EL CLIENTE y su compromiso de pago.
+
+SEXTA: ACEPTACIÓN
+Ambas partes declaran haber leído y comprendido el presente contrato, aceptando todas y cada una de las cláusulas aquí estipuladas.
+
+            `;
+            
+            const splitText = doc.splitTextToSize(contractText, 180);
+            doc.text(splitText, 15, yPos);
+            
+            // Signature space
+            const finalY = yPos + splitText.length * 5 + 20;
+            
+            doc.text('_________________________', 40, finalY);
+            doc.text('_________________________', 120, finalY);
+            doc.text('EL PRESTADOR', 55, finalY + 7);
+            doc.text('EL CLIENTE', 135, finalY + 7);
+            
+            doc.save(`Contrato_${client ? client.name.replace(/\s+/g, '_') : 'Cliente'}_${loan.id}.pdf`);
+            showNotification('Contrato generado', 'success');
+        }
+        
+        async function generatePaymentReceipt(payment) {
+            const loan = loans.find(l => l.id === payment.loanId);
+            const client = clients.find(c => c.id === payment.clientId);
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const logoHeight = await addLogoToPDF(doc);
+            let yPos = Math.max(20, logoHeight + 10);
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setTextColor(99, 102, 241);
+            doc.text(companyConfig.name || 'LoanMaster Pro', 105, yPos, { align: 'center' });
+            
+            yPos += 10;
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.text('RECIBO DE PAGO', 105, yPos, { align: 'center' });
+            
+            yPos += 5;
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`No. Recibo: ${payment.id}`, 105, yPos, { align: 'center' });
+            
+            // Receipt content
+            yPos += 20;
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, yPos - 5, 182, 80, 'F');
+            
+            doc.text(`Recibí de: ${client ? client.name : 'N/A'}`, 20, yPos);
+            yPos += 10;
+            doc.text(`La cantidad de: $${payment.amount.toFixed(2)} (${numberToWords(payment.amount)})`, 20, yPos);
+            yPos += 10;
+            doc.text(`Por concepto de: Pago de cuota #${payment.installmentId} del préstamo #${payment.loanId}`, 20, yPos);
+            yPos += 10;
+            doc.text(`Fecha de pago: ${formatDate(payment.date)}`, 20, yPos);
+            yPos += 10;
+            doc.text(`Método de pago: ${getMethodText(payment.method)}`, 20, yPos);
+            
+            if (payment.lateFee > 0) {
+                yPos += 10;
+                doc.setTextColor(239, 68, 68);
+                doc.text(`Incluye mora: $${payment.lateFee.toFixed(2)}`, 20, yPos);
+                doc.setTextColor(0);
+            }
+            
+            if (payment.notes) {
+                yPos += 10;
+                doc.text(`Notas: ${payment.notes}`, 20, yPos);
+            }
+            
+            // Signature
+            yPos += 30;
+            doc.text('_________________________', 75, yPos);
+            yPos += 7;
+            doc.text('Firma y Sello', 95, yPos, { align: 'center' });
+            
+            doc.save(`Recibo_${payment.id}_${client ? client.name.replace(/\s+/g, '_') : 'Cliente'}.pdf`);
+            showNotification('Recibo generado', 'success');
+        }
+        
+        function generatePaymentReceiptById(paymentId) {
+            const payment = payments.find(p => p.id === paymentId);
+            if (payment) {
+                generatePaymentReceipt(payment);
+            }
+        }
+        
+        function numberToWords(num) {
+            // Simple number to words conversion for Spanish
+            const units = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+            const teens = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
+            const tens = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+            
+            if (num === 0) return 'cero';
+            if (num < 10) return units[num];
+            if (num < 20) return teens[num - 10];
+            if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 !== 0 ? ' y ' + units[num % 10] : '');
+            if (num < 1000) return units[Math.floor(num / 100)] + 'cientos' + (num % 100 !== 0 ? ' ' + numberToWords(num % 100) : '');
+            
+            return num.toLocaleString(); // Fallback for larger numbers
+        }
+        
+        // Data Export/Import
+        function exportAllData() {
+            const data = {
+                clients,
+                loans,
+                payments,
+                companyConfig,
+                lateFeeConfig,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `LoanMaster_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Datos exportados', 'success');
+        }
+        
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (confirm('¿Importar estos datos? Se reemplazarán todos los datos actuales.')) {
+                        clients = data.clients || [];
+                        loans = data.loans || [];
+                        payments = data.payments || [];
+                        companyConfig = data.companyConfig || {};
+                        lateFeeConfig = data.lateFeeConfig || { enabled: true, rate: 1, graceDays: 3 };
+                        
+                        localStorage.setItem('loanClients', JSON.stringify(clients));
+                        localStorage.setItem('loanLoans', JSON.stringify(loans));
+                        localStorage.setItem('loanPayments', JSON.stringify(payments));
+                        localStorage.setItem('loanCompanyConfig', JSON.stringify(companyConfig));
+                        localStorage.setItem('loanLateFeeConfig', JSON.stringify(lateFeeConfig));
+                        
+                        location.reload();
+                    }
+                } catch (err) {
+                    showNotification('Error al importar: archivo inválido', 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function clearAllData() {
+            if (!confirm('¿ESTÁ SEGURO? Esta acción eliminará TODOS los datos permanentemente.')) return;
+            if (!confirm('¿REALMENTE ESTÁ SEGURO? Esta acción no se puede deshacer.')) return;
+            
+            localStorage.removeItem('loanClients');
+            localStorage.removeItem('loanLoans');
+            localStorage.removeItem('loanPayments');
+            localStorage.removeItem('loanCompanyConfig');
+            localStorage.removeItem('loanLateFeeConfig');
+            
+            location.reload();
+        }
+        
+        // Utility Functions
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        
+        function getMethodText(method) {
+            const methods = {
+                'cash': 'Efectivo',
+                'transfer': 'Transferencia',
+                'check': 'Cheque'
+            };
+            return methods[method] || method;
+        }
+        
+        function showNotification(message, type) {
+            const div = document.createElement('div');
+            div.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? 'var(--success)' : type === 'danger' ? 'var(--danger)' : type === 'warning' ? 'var(--warning)' : 'var(--primary)'};
+                color: white;
+                padding: 15px 30px;
+                border-radius: 50px;
+                font-weight: 600;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                z-index: 3000;
+                animation: slideDown 0.3s;
+            `;
+            div.textContent = message;
+            document.body.appendChild(div);
+            
+            setTimeout(() => {
+                div.style.animation = 'slideUp 0.3s';
+                setTimeout(() => div.remove(), 300);
+            }, 3000);
+        }
+        
+        // Close modals on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            }
+        });
+    </script>
+</body>
+</html>
